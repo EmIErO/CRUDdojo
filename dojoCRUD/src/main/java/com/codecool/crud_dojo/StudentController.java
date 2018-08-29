@@ -1,14 +1,13 @@
 package com.codecool.crud_dojo;
 
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.net.URLDecoder;
+import java.util.*;
 
 import org.jtwig.JtwigModel;
 import org.jtwig.JtwigTemplate;
@@ -19,8 +18,8 @@ public class StudentController implements HttpHandler {
 
     public StudentController() {
         this.students = new ArrayList<Student>();
-        this.students.add(new Student("aa", "bb", 35));
-        this.students.add(new Student("bbb", "ccc", 25));
+        this.students.add(new Student("aa", "bb", "35"));
+        this.students.add(new Student("bbb", "ccc", "25"));
     }
 
     @Override
@@ -47,15 +46,16 @@ public class StudentController implements HttpHandler {
         }
 
         if (parseUri(URI).equals("add") && method.equals("POST")) {
-            
-            InputStreamReader isr = new InputStreamReader(httpExchange.getRequestBody(), "utf-8");
-            BufferedReader br = new BufferedReader(isr);
-            String formData = br.readLine();
+            Map data = formatData(httpExchange);
 
-            System.out.println(formData);
-            Map inputs = parseFormData(formData);
-            add();
-            response = getFileWithUtil("add.html");
+            String name = data.get("firstName").toString();
+
+            Student newStudent = new Student(data.get("firstName").toString(), data.get("lastName").toString(), data.get("age").toString());
+            add(newStudent);
+
+            redirect(httpExchange, "/students");
+
+            response = "";
         }
 
         httpExchange.sendResponseHeaders(200, response.length());
@@ -98,7 +98,6 @@ public class StudentController implements HttpHandler {
         String[] parts = URI.split("/");
 
         for (int i=0; i< parts.length; i++) {
-            System.out.println(i + " " + parts[i]);
         }
 
         List<String> list = Arrays.asList("add", "edit", "delete");
@@ -119,5 +118,38 @@ public class StudentController implements HttpHandler {
             return parts[2] + " " + parts[3];
         }
         return "";
+    }
+
+    private Map<String, String> formatData(HttpExchange httpExchange) throws UnsupportedEncodingException, IOException {
+        InputStreamReader isr = new InputStreamReader(httpExchange.getRequestBody(), "utf-8");
+        BufferedReader br = new BufferedReader(isr);
+        String formData = br.readLine();
+
+        System.out.println(formData);
+
+        return parseFormData(formData);
+    }
+
+    private static Map<String, String> parseFormData(String formData) throws UnsupportedEncodingException {
+        Map<String, String> map = new HashMap<String, String>();
+        String[] pairs = formData.split("&");
+        for(String pair : pairs){
+            String[] keyValue = pair.split("=");
+
+            String value = new URLDecoder().decode(keyValue[1], "UTF-8");
+            map.put(keyValue[0], value);
+        }
+        return map;
+    }
+
+    static void redirect(HttpExchange httpExchange, String location) {
+        Headers headers = httpExchange.getResponseHeaders();
+        headers.add("Location", location);
+        try {
+            httpExchange.sendResponseHeaders(302, -1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        httpExchange.close();
     }
 }

@@ -2,14 +2,13 @@ package com.codecool.crud_dojo;
 
 public class Student {
 
-    private int ID = 0;
     private String firstName;
     private String lastName;
-    private int age;
+    private String age;
 
 
-    public Student(String firstName, String lastName, Integer age) {
-        this.ID = ++ID;
+    public Student(String firstName, String lastName, String age) {
+
         this.firstName = firstName;
         this.lastName = lastName;
         this.age = age;
@@ -23,7 +22,7 @@ public class Student {
         this.lastName = lastName;
     }
 
-    public void setAge(Integer age) {
+    public void setAge(String age) {
         this.age = age;
     }
 }
